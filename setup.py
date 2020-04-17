@@ -9,7 +9,13 @@ if sys.platform == 'win32':
 
 # Dependencies are automatically detected, but it might need
 # fine tuning.
-buildOptions = dict(packages = ["idna", "os", "matplotlib", "matplotlib.pyplot", "tkinter", "tkinter.filedialog"], excludes = [])
+buildOptions = dict(packages = ["idna",
+                                "os",
+                                "matplotlib",
+                                "matplotlib.pyplot",
+                                "tkinter",
+                                "tkinter.filedialog",
+                                "win32api"], excludes = [])
 
 
 executables = [

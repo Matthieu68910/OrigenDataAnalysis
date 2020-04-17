@@ -5,6 +5,15 @@ from origenpackage import fonctions
 from tkinter import messagebox
 import matplotlib.pyplot as plt
 import os
+from win32api import GetSystemMetrics
+
+width = GetSystemMetrics(0)
+height = GetSystemMetrics(1)
+stwidth = 0
+stheight = 0
+if width > 1000 and height > 820:
+    stwidth = width / 7
+    stheight = (height / 2) - 420
 
 
 # action button open file
@@ -40,6 +49,7 @@ def process():
     # print(typeIso)
     # print(isotope)
     value = []
+    numb = False
     with open("Data/data.txt", "rt") as myfile:
         for myline in myfile:
             mylines.append(myline)
@@ -47,18 +57,22 @@ def process():
         for x in range(len(mylines)):
             if mylines[x] == (isotope + "\n"):
                 # print("boucle1")
-                if mylines[x + 1] == (typeIso + "\n"):
+                if mylines[x + 1] == (typeIso + "\n") and not numb:
                     # print("boucle2")
                     dat = mylines[x + 2].split(", ")
                     # print(dat)
                     for y in range(len(dat) - 1):
                         value.append(float(dat[y]))
+                    numb = True
     # print(value)
     # print(charge)
     global Valeur
+    if not numb:
+        messagebox.showerror("Error", "No such data in file!")
+        return
     Valeur = fonctions.Result(isotope, 0, typeIso, value)
     # Valeur.printResult()
-    plt1 = fonctions.plotfig(charge, Valeur)
+    plt1 = fonctions.plotfig(charge, Valeur, process=True)
     plt1.savefig("Data/graphnew.png")
     graph1 = PhotoImage(file='Data/graphnew.png')
     img = canvas.create_image(0, 0, anchor=NW, image=graph1)
@@ -69,8 +83,9 @@ def process():
 
 # main window
 fenetre = tk.Tk()
-fenetre.title("Origen Data Compiler v1.0")
-fenetre.geometry("1003x820+400+100")
+fenetre.title("OrigenDA v0.2.0-beta")
+# fenetre.geometry("1003x820+400+100")
+fenetre.geometry("+%d+%d" % (stwidth, stheight))
 fenetre.configure(bg='#cccccc')
 fenetre.resizable(width=False, height=False)
 
@@ -91,7 +106,15 @@ class Win2:
     def __init__(self, root):
         self.root = root
         self.root.title("Save Current Plot")
-        self.root.geometry("400x333+1410+100")
+        stwidth1 = 0
+        stheight1 = 0
+        if width > 1000 and height > 820:
+            stwidth1 = stwidth + fenetre.winfo_width() + 5
+            stheight1 = stheight
+        else:
+            stwidth1 = GetSystemMetrics(0) / 2
+            stheight1 = GetSystemMetrics(1) / 2
+        self.root.geometry("+%d+%d" % (stwidth1, stheight1))
         self.lb1 = tk.Label(win2, text="Name : ", relief="groove", height=2, width=20)
         self.lb1.grid(row=0, column=0, sticky=W+E+N+S, padx=5, pady=5)
         self.lb2 = tk.Label(win2, text="Resolution (dpi) : ", relief="groove", height=2, width=20)
@@ -170,16 +193,21 @@ label = Label(fenetre, text="Usefull tips :\t 1. First, select the file path of 
                             "\n\t\t 2. Select an predefined isotope, or write one"
                             "\n\t\t 3. Chose the desired class of isotope"
                             "\n\t\t 4. Process the graph by clicking de 'Process' button"
-                            "\n\t\t 5. Reach advanced options and plot save by selecting the 'Save' menu", font=("Adobe Pi Std", 14, "italic"), relief="groove", justify=LEFT)
+                            "\n\t\t 5. Reach advanced options and plot save by selecting the 'Save' menu", font=("Adobe Pi Std", 12, "italic"), relief="groove", justify=LEFT)
 label.grid(row=0, column=0, columnspan=5, sticky=W+E+N+S, padx=5, pady=5)
 
 # menu bar
 menubar = Menu(fenetre)
 filemenu = Menu(menubar, tearoff=0)
+filemenu.add_command(label="Open Plot (coming soon...)", command=on_closing)
+filemenu.add_separator()
+filemenu.add_command(label="Settings (coming soon...)", command=on_closing)
+filemenu.add_separator()
 filemenu.add_command(label="Exit", command=on_closing)
 menubar.add_cascade(label="File", menu=filemenu)
 savemenu = Menu(menubar, tearoff=0)
 savemenu.add_command(label="Save Plot", command=lambda: new_window(Win2))
+savemenu.add_command(label="Quick Save (with default settings, coming soon...)", command=lambda: new_window(Win2))
 menubar.add_cascade(label="Save", menu=savemenu)
 fenetre.config(menu=menubar)
 
@@ -204,10 +232,11 @@ label2.grid(row=2, column=0, sticky=W+E+N+S, padx=5, pady=5)
 # entree2.grid(row=2, column=1, sticky=W+E+N+S, padx=5, pady=5)
 entree2 = ttk.Combobox(fenetre,
                        values=["U238",
-                                    "Am241",
-                                    "I131",
-                                    "Cs137",
-                                    "Co60"], font=("Adobe Pi Std", 12))
+                                "Am241",
+                                "I131",
+                                "Cs137",
+                                "Co60",
+                                "TOTAL"], font=("Adobe Pi Std", 12))
 entree2.current(4)
 entree2.grid(row=2, column=1, sticky=W+E+N+S, padx=5, pady=5)
 label21 = Label(fenetre, text="Type", width=20, relief="groove", font=("Adobe Pi Std", 12))
@@ -224,7 +253,7 @@ combo.grid(row=2, column=3, sticky=W+E+N+S, padx=5, pady=5)
 
 # graph canvas
 # graph = PhotoImage(file='graph1.png')
-canvas = Canvas(fenetre, width=990, height=500, relief=RAISED)
+canvas = Canvas(fenetre, width=991, height=501, relief=RAISED)
 # canvas.create_image(0, 0, anchor=NW, image=graph)
 canvas.grid(row=3, column=0, columnspan=5, padx=5, pady=5)
 
