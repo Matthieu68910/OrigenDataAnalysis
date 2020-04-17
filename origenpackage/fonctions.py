@@ -1,5 +1,6 @@
-import os
+# -*- coding: utf-8 -*-
 
+import os
 import matplotlib.pyplot as plt
 
 
@@ -50,6 +51,7 @@ class Result:
 
 def plotfig(charge, resultat, width=9.9, height=5, res=100, log=True, process=False):
     # print("Log, at start of plotfig : " + str(log))
+    plt.close('all')
     lab = resultat.getType()
     mas = resultat.getValue()
 
@@ -70,7 +72,7 @@ def plotfig(charge, resultat, width=9.9, height=5, res=100, log=True, process=Fa
             axes.set_ylim([(0.1 * min(mas)), (10 * max(mas))])
     else:
         plt.yscale('linear')
-        axes.set_ylim([(min(mas) - (0.1 * min(mas))), (max(mas) + (0.1 * max(mas)))])
+        axes.set_ylim([(min(mas) - (0.1 * min(mas)) + 0.00001), (max(mas) + (0.1 * max(mas)))])
     plt.plot(charge, mas, label=lab)
     pretitle = resultat.getIsotope()
     pretitle1 = pretitle[0].upper() + pretitle[1:].lower()

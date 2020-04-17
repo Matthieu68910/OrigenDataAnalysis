@@ -1,3 +1,10 @@
+# -*- coding: utf-8 -*-
+
+'''Origen Data Analysis v0.3.0-beta
+   author : Matthieu Duflot
+   student at ISIB - BRUXELLES
+   pre-release date : 17 april 2020'''
+
 import tkinter as tk
 from tkinter.filedialog import *
 from tkinter import ttk
@@ -6,6 +13,8 @@ from tkinter import messagebox
 import matplotlib.pyplot as plt
 import os
 from win32api import GetSystemMetrics
+from PIL import Image, ImageTk
+
 
 width = GetSystemMetrics(0)
 height = GetSystemMetrics(1)
@@ -41,6 +50,7 @@ def process():
     charge = [0]
     for x in range(len(charge1)):
         charge.append(charge1[x])
+    global isotope
     isotope = entree2.get().upper().replace(" ", '')
     if isotope == '':
         messagebox.showerror("Error", "Please specify an isotope")
@@ -74,7 +84,8 @@ def process():
     # Valeur.printResult()
     plt1 = fonctions.plotfig(charge, Valeur, process=True)
     plt1.savefig("Data/graphnew.png")
-    graph1 = PhotoImage(file='Data/graphnew.png')
+    image = Image.open("Data/graphnew.png")
+    graph1 = ImageTk.PhotoImage(image)
     img = canvas.create_image(0, 0, anchor=NW, image=graph1)
     canvas.itemconfigure(img, image=graph1)
     text.set(Valeur.returnResult())
@@ -102,12 +113,22 @@ def new_window(Win_class):
         Win_class(win2)
 
 
+def new_window1(Win_class):
+    global win3
+    try:
+        if win3.state() == "normal": win3.focus()
+    except NameError as e:
+        print(e)
+        win3 = tk.Toplevel(fenetre)
+        win3.resizable(width=False, height=False)
+        win3.configure(bg='#cccccc')
+        Win_class(win3)
+
+
 class Win2:
     def __init__(self, root):
         self.root = root
-        self.root.title("Save Current Plot")
-        stwidth1 = 0
-        stheight1 = 0
+        self.root.title("Save Plot")
         if width > 1000 and height > 820:
             stwidth1 = stwidth + fenetre.winfo_width() + 5
             stheight1 = stheight
@@ -161,14 +182,20 @@ class Win2:
         self.en3.insert(0, "9.9")
         self.en4.delete(0, "end")
         self.en4.insert(0, "5")
+        return
 
     def saveplot(self):
         # print("Log, at start of saveplot : " + str(case1value.get()))
         # print("Show, at start of saveplot : " + str(case2value.get()))
-        name = self.en1.get()
-        resolution = int(self.en2.get())
-        width = float(self.en3.get())
-        height = float(self.en4.get())
+        try:
+            pretitle = self.en1.get()
+            name = pretitle[0].upper() + pretitle[1:].lower()
+            resolution = int(self.en2.get())
+            width = float(self.en3.get())
+            height = float(self.en4.get())
+        except:
+            messagebox.showerror("Error", "Please enter correct data!")
+            return
         plt.close('all')
         plt2 = fonctions.plotfig(charge, Valeur, width, height, resolution, case1value.get())
         if case2value.get():
@@ -182,7 +209,81 @@ class Win2:
                 os.mkdir("Plots")
             plt2.savefig("Plots/" + name + ".png")
             messagebox.showinfo("Information", "PLot successfully saved")
+        return
 
+
+class Win3:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("Save Current Plot")
+        if width > 1000 and height > 820:
+            stwidth1 = stwidth + fenetre.winfo_width() + 5
+            stheight1 = stheight
+        else:
+            stwidth1 = GetSystemMetrics(0) / 2
+            stheight1 = GetSystemMetrics(1) / 2
+        self.root.geometry("+%d+%d" % (stwidth1, stheight1))
+        self.lb1 = tk.Label(win3, text="Name : ", relief="groove", height=2, width=20)
+        self.lb1.grid(row=0, column=0, sticky=W+E+N+S, padx=5, pady=5)
+        self.en1 = tk.Entry(win3, textvariable=str, text="", width=20)
+        self.en1.grid(row=0, column=1, sticky=W+E+N+S, padx=5, pady=5)
+        global case1value
+        case1value = tk.BooleanVar()
+        case1value.set(False)
+        self.case1 = Checkbutton(win3, text="Log scale", var=case1value, width=20, bg='#cccccc')
+        self.case1.grid(row=1, column=0, sticky=W+E+N+S, padx=5, pady=5)
+        global case2value
+        case2value = tk.BooleanVar()
+        case2value.set(False)
+        self.case2 = Checkbutton(win3, text="Show plot", var=case2value, width=20, bg='#cccccc')
+        self.case2.grid(row=1, column=1, sticky=W+E+N+S, padx=5, pady=5)
+        self.bt2 = tk.Button(win3, text="Save", command=self.saveplot, width=20, relief=RAISED, font=("Adobe Pi Std", 14, "bold"), bg='#c2c2d6')
+        self.bt2.grid(row=2, column=0, columnspan=2, sticky=W + E + N + S, padx=5, pady=5)
+        self.lb5 = tk.Label(win3, text="Info : plot is saved to main/Plots/", relief="groove", height=2, width=20)
+        self.lb5.grid(row=3, column=0, columnspan=2, sticky=W + E + N + S, padx=5, pady=5)
+        # self.root["bg"] = "navy"
+
+    def saveplot(self):
+        # print("Log, at start of saveplot : " + str(case1value.get()))
+        # print("Show, at start of saveplot : " + str(case2value.get()))
+        try:
+            name = self.en1.get()
+            resolution = 100
+            width = 9.9
+            height = 5
+        except:
+            messagebox.showerror("Error", "Please enter a correct name!")
+            return
+        plt.close('all')
+        plt2 = fonctions.plotfig(charge, Valeur, width, height, resolution, case1value.get())
+        if case2value.get():
+            if not os.path.exists("Plots"):
+                os.mkdir("Plots")
+            plt2.savefig("Plots/" + name + ".png")
+            plt2.show()
+        # self.root.destroy()
+        else:
+            if not os.path.exists("Plots"):
+                os.mkdir("Plots")
+            plt2.savefig("Plots/" + name + ".png")
+            messagebox.showinfo("Information", "PLot successfully saved")
+        return
+
+
+def quicksave():
+    if not os.path.exists("Plots"):
+        os.mkdir("Plots")
+    try:
+        name = isotope
+        resolution = 100
+        width = 9.9
+        height = 5
+        plt.close('all')
+        plt2 = fonctions.plotfig(charge, Valeur, width, height, resolution, True, False)
+        plt2.savefig("Plots/" + name + ".png")
+        messagebox.showinfo("Information", "PLot successfully saved")
+    except:
+        messagebox.showerror("Error", "Error!")
 
 
 # string containing chosen file path
@@ -207,8 +308,9 @@ filemenu.add_command(label="Exit", command=on_closing)
 menubar.add_cascade(label="File", menu=filemenu)
 savemenu = Menu(menubar, tearoff=0)
 savemenu.add_command(label="Save Plot", command=lambda: new_window(Win2))
-savemenu.add_command(label="Quick Save (with default settings, coming soon...)", command=lambda: new_window(Win2))
+savemenu.add_command(label="Save Plot With Default Settings", command=lambda: new_window1(Win3))
 menubar.add_cascade(label="Save", menu=savemenu)
+menubar.add_command(label="Quick Save", command=quicksave)
 fenetre.config(menu=menubar)
 
 # label file path
