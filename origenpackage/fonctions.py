@@ -48,12 +48,19 @@ class Result:
         return text
 
 
-def plotfig(charge, resultat, width=9.9, height=5, res=100, log=True):
+def plotfig(charge, resultat, width=9.9, height=5, res=100, log=True, process=False):
     # print("Log, at start of plotfig : " + str(log))
     lab = resultat.getType()
     mas = resultat.getValue()
+
+    '''if process and max(mas) != 0:
+        if (min(mas) / max(mas)) < 0.01:
+            log = True
+        else:
+            log = False'''
+
     plt.figure(figsize=(width, height), dpi=res)
-    plt.plot(charge, mas, label=lab)
+    # plt.plot(charge, mas, label=lab)
     axes = plt.gca()
     if log:
         plt.yscale('log')
@@ -62,12 +69,19 @@ def plotfig(charge, resultat, width=9.9, height=5, res=100, log=True):
         else:
             axes.set_ylim([(0.1 * min(mas)), (10 * max(mas))])
     else:
-        axes.set_ylim([0, (max(mas) + (0.1 * max(mas)))])
-    title = resultat.getIsotope() + ' - ' + lab
+        plt.yscale('linear')
+        axes.set_ylim([(min(mas) - (0.1 * min(mas))), (max(mas) + (0.1 * max(mas)))])
+    plt.plot(charge, mas, label=lab)
+    pretitle = resultat.getIsotope()
+    pretitle1 = pretitle[0].upper() + pretitle[1:].lower()
+    title = pretitle1 + ' - ' + lab
     plt.axvline(600, 0, 1, label='Reactor stopped', color='g')
     plt.title(title)
-    plt.xlabel("Durée en jours [jours]")
-    plt.ylabel("Quantité en grammes [g]")
+    plt.xlabel("Duration [days]")
+    if lab == "(Alpha, N)" or lab == "Spontaneous Fiss. N. Source":
+        plt.ylabel("Neutrons / sec")
+    else:
+        plt.ylabel("Mass [g]")
     plt.legend()
     return plt
 
