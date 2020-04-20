@@ -16,7 +16,10 @@ buildOptions = dict(packages = ["idna",
                                 "tkinter",
                                 "tkinter.filedialog",
                                 "win32api",
-                                "PIL"], excludes = [])
+                                "PIL",
+                                "ctypes",
+                                "re",
+                                "matplotlib.ticker"], excludes = [])
 
 
 executables = [
