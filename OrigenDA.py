@@ -17,6 +17,7 @@ from PIL import Image, ImageTk
 import ctypes
 import re
 from matplotlib.ticker import (MultipleLocator, FormatStrFormatter)
+import os
 
 # variables
 version = "OrigenDA v1.0.0-beta"
@@ -38,12 +39,34 @@ if sys_width > 1290 and sys_height > 730:
     start_x_pos = (sys_width / 2) - 640
     start_y_pos = (sys_height / 2) - 360
 
+ctypes.windll.kernel32.SetFileAttributesW('Data', 0)
+if not os.path.exists("Data"):
+    os.mkdir("Data")
+if not os.path.exists("Fig"):
+    os.mkdir("Fig")
+
+ctypes.windll.kernel32.SetFileAttributesW('Data/path.txt', 0)
+try:
+    f = open("Data/path.txt", "r+")
+    path = f.readline()
+    f.close()
+    print(path)
+    ctypes.windll.kernel32.SetFileAttributesW('Data/path.txt', 2)
+except:
+    path = ""
+    pass
+ctypes.windll.kernel32.SetFileAttributesW('Data', 2)
+
 # main frame
 main_window = tk.Tk()
 main_window.title(version)
 main_window.geometry("%dx%d+%d+%d" % (1240, 640, start_x_pos, start_y_pos))
 main_window.configure(bg=bg_color)
 main_window.resizable(width=False, height=False)
+main_window.wm_iconbitmap('icon.ico')
+
+file_path = StringVar()
+file_path.set(str(path))
 
 
 def openfile():
@@ -53,9 +76,21 @@ def openfile():
 
 
 def process_file():
+    path_new = file_path.get()
+    ctypes.windll.kernel32.SetFileAttributesW('Data/path.txt', 0)
+    fg = open("Data/path.txt", "w+")
+    fg.write(path_new)
+    fg.close()
+    ctypes.windll.kernel32.SetFileAttributesW('Data/path.txt', 2)
+
+    ctypes.windll.kernel32.SetFileAttributesW('Data', 0)
     mylines = []  # lines of the file
     balise = [[], [], [], [], []]  # balise au format (1000 + line)
     global data, all_elements, all_isotopes, charge_num
+    data.clear()
+    charge_num.clear()
+    all_elements.clear()
+    all_isotopes.clear()
 
     if file_path.get() == "":
         messagebox.showerror("Error", "Please select a file first")
@@ -94,8 +129,8 @@ def process_file():
                         a = charge[z].replace("YR", '')
                         charge_num.append((float(a) * 365) + 600)
                 break
-        ctypes.windll.kernel32.SetFileAttributesW('data.txt', 0)
-        f = open("data.txt", "w+")
+        ctypes.windll.kernel32.SetFileAttributesW('Data/data.txt', 0)
+        f = open("Data/data.txt", "w+")
         for z in range(len(mylines)):
             if balise[0][0] <= z <= balise[1][0]:
                 if mylines[z][1:3] != "  " and mylines[z][0:6] != "ORIGEN" \
@@ -293,8 +328,9 @@ def process_file():
                     new = [5, elem2, iso, value]
                     data.append(new)
         f.close()
-    ctypes.windll.kernel32.SetFileAttributesW('data.txt', 2)
+    ctypes.windll.kernel32.SetFileAttributesW('Data/data.txt', 2)
     list_of_elements = []
+    list_of_elements.clear()
     for vector in data:
         element = str(vector[1])
         element1 = element.lower()
@@ -320,6 +356,7 @@ def process_file():
     all_isotopes = list(dict.fromkeys(all_isotopes))
     text = "File successfully processed ! " + str(len(all_elements)) + " elements, and " + str(len(all_isotopes)) + " isotopes found."
     file_info.set(text)
+    ctypes.windll.kernel32.SetFileAttributesW('Data', 2)
     return
 
 
@@ -351,7 +388,9 @@ def process_plot():
     for x in values_for_graph:
         values_num.append(float(x))
     plot_fig(recherche, type_recherche, charge_num, values_num, 100, 9.4, 4.6, case_value_xlog.get(), case_value_ylog.get())
+    ctypes.windll.kernel32.SetFileAttributesW('graphnew.jpg', 0)
     img1 = ImageTk.PhotoImage(Image.open("graphnew.jpg"))
+    ctypes.windll.kernel32.SetFileAttributesW('graphnew.jpg', 2)
     canvas.configure(image=img1)
     canvas.image = img1
     return
@@ -428,7 +467,9 @@ def plot_fig(title, lab, x_data, y_data, res=100, width=9.4, height=4.6, x_log=F
     plt.legend()
 
     if save:
+        ctypes.windll.kernel32.SetFileAttributesW('graphnew.jpg', 0)
         plt.savefig("graphnew.jpg", quality=95)
+        ctypes.windll.kernel32.SetFileAttributesW('graphnew.jpg', 2)
     else:
         return plt
     plt.close('all')
@@ -438,7 +479,31 @@ def plot_fig(title, lab, x_data, y_data, res=100, width=9.4, height=4.6, x_log=F
 
 
 def save_show_plot():
-    title = entry_save_name.get()
+    if entry_save_resolution.get() == "":
+        messagebox.showerror("Error", "Please set a resolution")
+        return
+    if entry_save_height.get() == "":
+        messagebox.showerror("Error", "Please set a plot height")
+        return
+    if entry_save_width.get() == "":
+        messagebox.showerror("Error", "Please set a plot width")
+        return
+    try:
+        res1 = int(entry_save_resolution.get())
+    except:
+        messagebox.showerror("Error", "Resolution need to be an integer")
+        return
+    try:
+        height1 = float(entry_save_height.get())
+    except:
+        messagebox.showerror("Error", "Resolution need to be an integer")
+        return
+    try:
+        width1 = float(entry_save_width.get())
+    except:
+        messagebox.showerror("Error", "Resolution need to be an integer")
+        return
+
     recherche = combobox_isotope.get()
     type_recherche = combobox_origin.get()
     values_for_graph = []
@@ -465,12 +530,40 @@ def save_show_plot():
     values_num = []
     for x in values_for_graph:
         values_num.append(float(x))
-    plot = plot_fig(recherche, type_recherche, charge_num, values_num, int(entry_save_resolution.get()), float(entry_save_width.get()), float(entry_save_height.get()), case_save_logx.get(), case_save_logy.get(), False)
+    plot = plot_fig(recherche, type_recherche, charge_num, values_num, res1, width1, height1, case_save_logx.get(), case_save_logy.get(), False)
     plot.show()
     return
 
 
 def save_save_plot():
+    if entry_save_resolution.get() == "":
+        messagebox.showerror("Error", "Please set a resolution")
+        return
+    if entry_save_height.get() == "":
+        messagebox.showerror("Error", "Please set a plot height")
+        return
+    if entry_save_width.get() == "":
+        messagebox.showerror("Error", "Please set a plot width")
+        return
+    if entry_save_name.get() == "":
+        messagebox.showerror("Error", "Please set a name")
+        return
+    try:
+        res1 = int(entry_save_resolution.get())
+    except:
+        messagebox.showerror("Error", "Resolution need to be an integer")
+        return
+    try:
+        height1 = float(entry_save_height.get())
+    except:
+        messagebox.showerror("Error", "Resolution need to be an integer")
+        return
+    try:
+        width1 = float(entry_save_width.get())
+    except:
+        messagebox.showerror("Error", "Resolution need to be an integer")
+        return
+
     title = entry_save_name.get()
     recherche = combobox_isotope.get()
     type_recherche = combobox_origin.get()
@@ -498,10 +591,15 @@ def save_save_plot():
     values_num = []
     for x in values_for_graph:
         values_num.append(float(x))
-    plot = plot_fig(recherche, type_recherche, charge_num, values_num, int(entry_save_resolution.get()), float(entry_save_width.get()), float(entry_save_height.get()), case_save_logx.get(), case_save_logy.get(), False)
-    plot.savefig((str(title) + ".jpg"), quality=95)
+    plot = plot_fig(recherche, type_recherche, charge_num, values_num, res1, width1, height1, case_save_logx.get(), case_save_logy.get(), False)
+    try:
+        plot.savefig("Fig/" + (str(title) + ".jpg"), quality=95)
+        messagebox.showinfo("Information", "Plot successfully saved")
+    except:
+        messagebox.showerror("Error", "Plot not saved!\nError in save_save_plot()")
+        return
     plt.close('all')
-    messagebox.showinfo("Information", "Plot successfully saved")
+
     return
 
 
@@ -654,11 +752,10 @@ graph_frame.grid(row=2, sticky="nwe", padx=3, pady=3)
 save_frame.grid(row=3, sticky="nsew", padx=3, pady=3)
 
 # create file frame widgets
-file_path = StringVar()
 file_info = StringVar()
 
 label_file = Label(file_frame, text="File path:", font=("Adobe Pi Std", 12), width=15, height=1, relief="groove", bg=bg_color)
-entry_file = Entry(file_frame, textvariable=str, text=file_path, font=("Adobe Pi Std", 12), width=61)
+entry_file = Entry(file_frame, textvariable=str, textvar=file_path, font=("Adobe Pi Std", 12), width=61)
 button_file = Button(file_frame, text="Open file", command=openfile, width=15, relief=RAISED, font=("Adobe Pi Std", 12, "bold"), bg='#c2c2d6')
 button_file_process = Button(file_frame, text="Process file", command=process_file, width=15, relief=RAISED, font=("Adobe Pi Std", 12, "bold"), bg='#c2c2d6')
 label_file_info = Label(file_frame, textvar=file_info, anchor="w", font=("Adobe Pi Std", 12), width=56, height=1, relief="groove", bg=bg_color)

@@ -6,28 +6,30 @@ from cx_Freeze import setup, Executable
 base = None
 if sys.platform == 'win32':
     base = 'Win32GUI'
-
+includefiles = ['README.txt', 'icon.ico', 'example_input.u11']
+includes = []
+excludes = []
+packages = ["idna",
+            "os",
+            "matplotlib",
+            "matplotlib.pyplot",
+            "tkinter",
+            "tkinter.filedialog",
+            "win32api",
+            "PIL",
+            "ctypes",
+            "re",
+            "matplotlib.ticker"]
 # Dependencies are automatically detected, but it might need
 # fine tuning.
-buildOptions = dict(packages = ["idna",
-                                "os",
-                                "matplotlib",
-                                "matplotlib.pyplot",
-                                "tkinter",
-                                "tkinter.filedialog",
-                                "win32api",
-                                "PIL",
-                                "ctypes",
-                                "re",
-                                "matplotlib.ticker"], excludes = [])
 
 
 executables = [
-    Executable('main.py', base=base)
+    Executable('OrigenDA.py', base=base)
 ]
 
-setup(name='Origen Data Analysis',
-      version = '1.0',
-      description = '',
-      options = dict(build_exe = buildOptions),
-      executables = executables)
+setup(name='OrigenDataAnalysis',
+      version='1.1.0',
+      description='Process data from Origen22',
+      options={'build_exe': {'includes': includes, 'excludes': excludes, 'packages': packages, 'include_files': includefiles}},
+      executables=executables)
