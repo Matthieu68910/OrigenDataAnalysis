@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 
-'''Origen Data Analysis v1.0.0-beta
+'''Origen Data Analysis v1.2.0-beta
    author : Matthieu Duflot
    student at ISIB - BRUXELLES
    mail : duflotmatthieu1@gmail.com
-   pre-release date : 20 april 2020'''
+   release date : 7 may 2020'''
 
 import tkinter as tk
 from tkinter.filedialog import *
@@ -20,93 +20,98 @@ from matplotlib.ticker import (MultipleLocator, FormatStrFormatter)
 import os
 
 # variables
-version = "OrigenDA v1.0.0-beta"
-sys_width = GetSystemMetrics(0)
-sys_height = GetSystemMetrics(1)
-main_window_width = 0
-main_window_height = 0
-start_x_pos = 0
-start_y_pos = 0
-bg_color = '#cccccc'
+version = "OrigenDA v1.2.0-beta"
+sys_width = GetSystemMetrics(0)  # récupère la largeur d'écran en pixels
+sys_height = GetSystemMetrics(1)  # récupère la hauteur d'écran en pixels
+start_x_pos = 0  # position de départ de la fenêtre en largeur
+start_y_pos = 0  # position de départ de la fenêtre en hauteur (0, 0) donc en haut à gauche de l'écran
+bg_color = '#cccccc'  # couleur de fond
 
-data = []
-charge_num = []
-all_elements = []
-all_isotopes = []
+data = []  # initialise le vecteur data qui comportera les données
+charge_num = []  # initialise le vecteur charge_num, qui contiendra les valeurs de temps en jour
+all_elements = []  # initialise la liste de tous les éléments détectés dans le fichier
+all_isotopes = []  # initialise la liste de tous les isotopes détectés dans le fichier
 
 # set starting positions for high res screens
 if sys_width > 1290 and sys_height > 730:
     start_x_pos = (sys_width / 2) - 640
     start_y_pos = (sys_height / 2) - 360
 
-ctypes.windll.kernel32.SetFileAttributesW('Data', 0)
+# crée les dossiers Data et Fig si ils n'existent pas encore
+ctypes.windll.kernel32.SetFileAttributesW('Data', 0)  # rends le dossier Data (s'il existe) visible
 if not os.path.exists("Data"):
     os.mkdir("Data")
 if not os.path.exists("Fig"):
     os.mkdir("Fig")
 
-ctypes.windll.kernel32.SetFileAttributesW('Data/path.txt', 0)
+# essaye d'ouvrir le fichier Data/path qui contient la mémoire du dernier path utilisé. Si premier lancement,
+# il laisse la variable path vide.
+ctypes.windll.kernel32.SetFileAttributesW('Data/path.txt', 0)  # rends le fichier visible
 try:
-    f = open("Data/path.txt", "r+")
-    path = f.readline()
-    f.close()
-    print(path)
-    ctypes.windll.kernel32.SetFileAttributesW('Data/path.txt', 2)
+    f = open("Data/path.txt", "r+")  # ouvre le fichier en lecture
+    path = f.readline()  # lit le path enregistré
+    f.close()  # ferme le fichier
+    ctypes.windll.kernel32.SetFileAttributesW('Data/path.txt', 2)  # cache le fichier
 except:
     path = ""
-    pass
-ctypes.windll.kernel32.SetFileAttributesW('Data', 2)
+ctypes.windll.kernel32.SetFileAttributesW('Data', 2)  # cache le dossier Data
 
-# main frame
+# main frame : initialise la fenêtre
 main_window = tk.Tk()
-main_window.title(version)
-main_window.geometry("%dx%d+%d+%d" % (1240, 640, start_x_pos, start_y_pos))
-main_window.configure(bg=bg_color)
-main_window.resizable(width=False, height=False)
-main_window.wm_iconbitmap('icon.ico')
+main_window.title(version)  # titre
+main_window.geometry("%dx%d+%d+%d" % (1240, 640, start_x_pos, start_y_pos))  # largeur, hauteur et position de départ
+main_window.configure(bg=bg_color)  # couleur du fond
+main_window.resizable(width=False, height=False)  # empêche de resizer
+main_window.wm_iconbitmap('icon.ico')  # mets l'icône
 
-file_path = StringVar()
-file_path.set(str(path))
+file_path = StringVar()  # crée un variable pour le path
+file_path.set(str(path))  # change la valeur de file_path pour y mettre le path en mémoire (ou "" si il n'existe pas)
 
 
+# fonction qui ouvre une interface pour sélection le fichier dans le pc
+# la fonction enregistre directement le chemin du fichier selectionné dans la variable file_path
+# la fonction recherche les fichiers de type .u11 prioritairement
 def openfile():
-    global file_path
+    global file_path  # global pour avoir accès à la variable qui est en dehors de la fct
     file_path.set(askopenfilename(title="Open file", filetypes=[('u11 files', '.u11'), ('all files', '.*')]))
     return
 
 
+# fonction qui permet de lire le fichier sélectionné :
+# la fct crée un fichier Data/data.txt
+#
 def process_file():
-    path_new = file_path.get()
-    ctypes.windll.kernel32.SetFileAttributesW('Data/path.txt', 0)
-    fg = open("Data/path.txt", "w+")
-    fg.write(path_new)
+    path_new = file_path.get()  # copier le path en local
+    ctypes.windll.kernel32.SetFileAttributesW('Data/path.txt', 0)  # rends visible
+    fg = open("Data/path.txt", "w+")  # ouvre en écriture ou crée
+    fg.write(path_new)  # écrit le path pour mémoire
     fg.close()
-    ctypes.windll.kernel32.SetFileAttributesW('Data/path.txt', 2)
+    ctypes.windll.kernel32.SetFileAttributesW('Data/path.txt', 2)  # rends invisible
 
-    ctypes.windll.kernel32.SetFileAttributesW('Data', 0)
-    mylines = []  # lines of the file
-    balise = [[], [], [], [], []]  # balise au format (1000 + line)
-    global data, all_elements, all_isotopes, charge_num
-    data.clear()
-    charge_num.clear()
-    all_elements.clear()
-    all_isotopes.clear()
+    ctypes.windll.kernel32.SetFileAttributesW('Data', 0)  # rends visible
+    mylines = []  # lignes du fichier
+    balise = [[], [], [], [], []]  # balises
+    global data, all_elements, all_isotopes, charge_num  # charge les variables globales
+    data.clear()  # vide la variable data pour mettre les nouvelles données
+    charge_num.clear()  # vide la variable charge_num pour mettre les nouvelles données
+    all_elements.clear()  # vide la variable all_element pour mettre les nouvelles données
+    all_isotopes.clear()  # vide la variable all_isotope pour mettre les nouvelles données
 
-    if file_path.get() == "":
-        messagebox.showerror("Error", "Please select a file first")
+    if file_path.get() == "":  # vérifie que le path est existant
+        messagebox.showerror("Error", "Please select a file first")  # message d'erreur
         return
-    try:
+    try:  # essaye d'ouvrir le fichier désigné par le path
         with open(file_path.get(), "rt") as myfile:
             pass
-    except FileNotFoundError:
+    except FileNotFoundError:  # si erreur fichier non trouvé, message d'erreur
         messagebox.showerror("Error", "Wrong file path, please select a .txt or .u11 file")
         return
-    with open(file_path.get(), "rt") as myfile:  # file read
-        for myline in myfile:
+    with open(file_path.get(), "rt") as myfile:  # ouvre le fichier
+        for myline in myfile:  # insert chaque ligne du fichier dans une nouvelle case de mylines[]
             mylines.append(myline)
-        for x in range(len(mylines)):  # localisation of strips
-            if mylines[x].find("ACTIVATION PRODUCT", 98, 120) != -1:
-                balise[0].append(x)
+        for x in range(len(mylines)):  # localisation des séparateurs
+            if mylines[x].find("ACTIVATION PRODUCT", 98, 120) != -1:  # cherche "ACTIVATION PRODUCT" entre les colones 98 et 120
+                balise[0].append(x)  # ajoute le numéro de la ligne dans le vecteur balise (case 0)
             elif mylines[x].find("ACTINIDES+DAUGHTERS", 98, 120) != -1:
                 balise[1].append(x)
             elif mylines[x].find("FISSION PRODUCTS", 98, 120) != -1:
@@ -115,24 +120,24 @@ def process_file():
                 balise[3].append(x)
             elif mylines[x].find("FISSION NEUTRON SOURCE", 40, 65) != -1:
                 balise[4].append(x)
-            else:
+            else:  # si ne trouve aucune correspondances, passe à la ligne suivante
                 pass
-        for y in range(len(mylines)):  # recovery of CHARGE
-            if mylines[y].find("CHARGE", 10, 20) != -1:
-                line = mylines[y].replace("CHARGE", '')
-                charge = line.split()
-                for z in range(len(charge)):
-                    if charge[z].find('D') != -1:
+        for y in range(len(mylines)):  # récupération des intervalles de temps
+            if mylines[y].find("CHARGE", 10, 20) != -1:  # cherche "CHARGE"
+                line = mylines[y].replace("CHARGE", '')  # récupère la ligne, en enlevant le mot charge pour ne garder que les durées
+                charge = line.split()  # sépare les durées par les espaces entre elles
+                for z in range(len(charge)):  # passe les durées en revues une par une
+                    if charge[z].find('D') != -1:  # cherche si il y à un D pour days
                         a = charge[z].replace("D", '')
-                        charge_num.append(float(a))
-                    elif charge[z].find('YR') != -1:
+                        charge_num.append(float(a))  # si oui, récupère uniquement le nombre de jour sans le D
+                    elif charge[z].find('YR') != -1:  # cherche si il y à un YR pour year
                         a = charge[z].replace("YR", '')
-                        charge_num.append((float(a) * 365) + 600)
+                        charge_num.append((float(a) * 365) + 600)  # si oui, récupère uniquement le nombre d'années sans le YR , et multiplie pour avoir les jours
                 break
-        ctypes.windll.kernel32.SetFileAttributesW('Data/data.txt', 0)
-        f = open("Data/data.txt", "w+")
-        for z in range(len(mylines)):
-            if balise[0][0] <= z <= balise[1][0]:
+        ctypes.windll.kernel32.SetFileAttributesW('Data/data.txt', 0)  # rends visible
+        f = open("Data/data.txt", "w+")  # ouvre en écriture. Crée si inexistant
+        for z in range(len(mylines)):  # ballaie les lignes du fichier
+            if balise[0][0] <= z <= balise[1][0]:  # si la ligne est dans le territoire de la balise 0
                 if mylines[z][1:3] != "  " and mylines[z][0:6] != "ORIGEN" \
                         and mylines[z] != "\n" \
                         and mylines[z][0:3] != "---" \
@@ -141,37 +146,37 @@ def process_file():
                         and mylines[z][0:8] != "BASIS=ON" \
                         and mylines[z][0:5] != "TABLE" \
                         and mylines[z][0:6] != "ACTUAL" \
-                        and mylines[z][0:1] != "":
-                    isotope = mylines[z][0:10].replace(' ', '')
-                    value = mylines[z][10:].split()
-                    f.write(isotope + "\nActivation Products\n")
+                        and mylines[z][0:1] != "":  # élimine les faux positifs de détection d'isotope
+                    isotope = mylines[z][0:10].replace(' ', '')  # récupère l'isotope dans les dix premiers char
+                    value = mylines[z][10:].split()  # récupère les valeurs de masse de l'isotope
+                    f.write(isotope + "\nActivation Products\n")  # écrit la ligne dans le fichier data
                     for x in value:
-                        f.write(str(x) + ", ")
-                    f.write("\n")
-                    sep = re.match(r"(?P<element>[a-zA-Z]+)(?P<isotope>.+)$", isotope)
-                    contains_digit = False
-                    for character in isotope:
-                        if character.isdigit():
+                        f.write(str(x) + ", ")  # ajoute les données et une virgule entre les données
+                    f.write("\n")  # à la ligne
+                    sep = re.match(r"(?P<element>[a-zA-Z]+)(?P<isotope>.+)$", isotope)  # exmple : sépare Co60 en Co et 60
+                    contains_digit = False  # contient des chiffres ? ex Co non ou U238 oui
+                    for character in isotope:  # cherche les chiffres
+                        if character.isdigit():  # si trouve un, alors
                             contains_digit = True
                     if contains_digit:
-                        elem = sep.group('element')
-                        if len(elem) > 1:
+                        elem = sep.group('element')  # récupère les lettres du match
+                        if len(elem) > 1:  # ex: change CO en Co
                             elem1 = elem.lower()
                             elem2 = elem1[0].upper() + elem1[1:]
                         else:
                             elem2 = elem.upper()
-                        iso = sep.group('isotope').lower()
-                    else:
+                        iso = sep.group('isotope').lower()  # ex: 99M en 99m (pour le Tc99m)
+                    else:  # si pas de chiffres, alors c'est un élément (somme des isotopes)
                         elem = isotope
                         if len(elem) > 1:
                             elem1 = elem.lower()
                             elem2 = elem1[0].upper() + elem1[1:]
                         else:
                             elem2 = elem.upper()
-                        iso = ""
-                    new = [1, elem2, iso, value]
-                    data.append(new)
-            if balise[1][0] <= z <= balise[2][0]:
+                        iso = ""  # pas de numéro car élément complet
+                    new = [1, elem2, iso, value]  # crée le vecteur de l'élément ou isotope
+                    data.append(new)  # ajoute dans data
+            if balise[1][0] <= z <= balise[2][0]:  # idem avant mais pour balise 1...
                 if mylines[z][1:3] != "  " and mylines[z][0:6] != "ORIGEN" \
                         and mylines[z] != "\n" \
                         and mylines[z][0:3] != "---" \
@@ -328,19 +333,19 @@ def process_file():
                     new = [5, elem2, iso, value]
                     data.append(new)
         f.close()
-    ctypes.windll.kernel32.SetFileAttributesW('Data/data.txt', 2)
-    list_of_elements = []
-    list_of_elements.clear()
-    for vector in data:
-        element = str(vector[1])
+    ctypes.windll.kernel32.SetFileAttributesW('Data/data.txt', 2)  # cache le fichier
+    list_of_elements = []  # initialise
+    list_of_elements.clear()  # vide si existe déjà
+    for vector in data:  # passe tous les vecteurs contenus dans data
+        element = str(vector[1])  # récupère l'élément
         element1 = element.lower()
         if len(element1) > 1:
             element2 = element1[0].upper() + element1[1:]
         else:
             element2 = element1.upper()
-        list_of_elements.append(element2)
-    list_of_elements = list(dict.fromkeys(list_of_elements))
-    combobox_element["values"] = list_of_elements
+        list_of_elements.append(element2)  # ajoute à la liste
+    list_of_elements = list(dict.fromkeys(list_of_elements))  # trie et élimine les doublons
+    combobox_element["values"] = list_of_elements  # met la liste des éléments dans la variable de la liste déroulante
 
     for vector in data:
         element = str(vector[1])
@@ -351,19 +356,20 @@ def process_file():
             element2 = element1.upper()
         all_elements.append(element2)
         isotope = element2 + str(vector[2])
-        all_isotopes.append(isotope)
-    all_elements = list(dict.fromkeys(all_elements))
+        all_isotopes.append(isotope)  # ajoute à la liste des isotopes
+    all_elements = list(dict.fromkeys(all_elements))  # crée une liste sans doublons
     all_isotopes = list(dict.fromkeys(all_isotopes))
     text = "File successfully processed ! " + str(len(all_elements)) + " elements, and " + str(len(all_isotopes)) + " isotopes found."
-    file_info.set(text)
-    ctypes.windll.kernel32.SetFileAttributesW('Data', 2)
+    file_info.set(text)  # insère le texte dans le conteneur correspondant (via variable StringVar)
+    ctypes.windll.kernel32.SetFileAttributesW('Data', 2)  # cache le dossier
     return
 
 
+# fonction qui crée le plot avec les paramètres demandés
 def process_plot():
-    recherche = combobox_isotope.get()
-    type_recherche = combobox_origin.get()
-    values_for_graph = []
+    recherche = combobox_isotope.get()  # récupère l'isotope sélectionné dans combobox
+    type_recherche = combobox_origin.get()  # récupère le type (ex: activation product) sélectionné dans combobox
+    values_for_graph = []  # init
     if type_recherche == "Activation Products":
         pos = 1
     elif type_recherche == "Actinides + Daughters":
@@ -376,28 +382,29 @@ def process_plot():
         pos = 5
     else:
         return
-    data_new = []
-    for vector in data:
+    data_new = []  # variable qui contiendra tous les isotopes du type sélectionné
+    for vector in data:  # cherche dans data l'élément choisis avec l'aide de pos
         if vector[0] == pos:
             data_new.append(vector)
     for vector in data_new:
-        iso = str(vector[1]) + str(vector[2])
+        iso = str(vector[1]) + str(vector[2])  # recré l'isotope Co + 60 = Co60
         if iso == recherche:
-            values_for_graph = vector[3]
+            values_for_graph = vector[3]  # récupère les données à mettre sur le graph
     values_num = []
     for x in values_for_graph:
-        values_num.append(float(x))
-    plot_fig(recherche, type_recherche, charge_num, values_num, 100, 9.4, 4.6, case_value_xlog.get(), case_value_ylog.get())
+        values_num.append(float(x))  # transforme en float les données string
+    plot_fig(recherche, type_recherche, charge_num, values_num, 100, 9.4, 4.6, case_value_xlog.get(), case_value_ylog.get())  # appel à la fct plot_fig
     ctypes.windll.kernel32.SetFileAttributesW('graphnew.jpg', 0)
-    img1 = ImageTk.PhotoImage(Image.open("graphnew.jpg"))
+    img1 = ImageTk.PhotoImage(Image.open("graphnew.jpg"))  # crée une image
     ctypes.windll.kernel32.SetFileAttributesW('graphnew.jpg', 2)
-    canvas.configure(image=img1)
+    canvas.configure(image=img1)  # change l'image pour rafraîchir le canvas
     canvas.image = img1
     return
 
 
+# fonction qui permet de créer un plot à partir des données passées en argument
 def plot_fig(title, lab, x_data, y_data, res=100, width=9.4, height=4.6, x_log=False, y_log=False, save=True):
-    title1 = title[0] + title[1:].lower()
+    title1 = title[0] + title[1:].lower()  # crée le titre
     sep = re.match(r"(?P<element>[a-zA-Z]+)(?P<isotope>.+)$", title1)
     contains_digit = False
     for character in title1:
@@ -409,21 +416,21 @@ def plot_fig(title, lab, x_data, y_data, res=100, width=9.4, height=4.6, x_log=F
     else:
         elem = title1
         iso = ""
-    title2 = r'${}^{%s}$%s' % (iso, elem)
+    title2 = r'${}^{%s}$%s' % (iso, elem)  # met le 60 de Co60 en exposant {}^{60}Co
 
-    plt.close('all')
+    plt.close('all')  # ferme les éventuels graphs
     alerte = False
     if len(x_data) != len(y_data):
-        x_data.insert(0, 0)
+        x_data.insert(0, 0)  # insert un 0 pour remplacer le mot CHARGE enlevé précédamment
     for x in range(len(y_data)):
         if y_data[x] < 1E-12:
             y_data[x] = 1E-12
             alerte = True
 
-    plt.figure(figsize=(width, height), dpi=res)
-    axes = plt.gca()
-    plt.plot(x_data, y_data, label=title2)
-    plt.axvline(600, 0, 1, label='Reactor stopped', color='g')
+    plt.figure(figsize=(width, height), dpi=res)  # initialise le plot
+    axes = plt.gca()  # récupère les axes
+    plt.plot(x_data, y_data, label=title2)  # plot les données
+    plt.axvline(600, 0, 1, label='Reactor stopped', color='g')  # ligne verticale pour Arrêt du coeur
     if x_log:
         plt.xscale('log')
         axes.set_xlim([1E-03, (2 * max(x_data))])
@@ -455,29 +462,30 @@ def plot_fig(title, lab, x_data, y_data, res=100, width=9.4, height=4.6, x_log=F
         axes.yaxis.set_minor_locator(ticker.AutoMinorLocator())
     else:
         axes.yaxis.set_minor_locator(ticker.LogLocator(base=10.0, numticks=15))
-    axes.tick_params(which='major', width=2)
+    axes.tick_params(which='major', width=2)  # configure les marques sur l'axe (majeur et mineur)
     axes.tick_params(which='minor', width=1)
     axes.tick_params(which='major', length=7)
     axes.tick_params(which='minor', length=4, color='darkblue')
-    plt.grid(b=True, which='major', color='black', linestyle='-')
+    plt.grid(b=True, which='major', color='black', linestyle='-')  # ajoute le quadrillage
     plt.grid(b=True, which='minor', color='darkblue', linestyle='-', alpha=0.2)
     plt.minorticks_on()
-    plt.figtext(0.01, 0.01, 'Data from Origen22', size=6, horizontalalignment='left')
+    plt.figtext(0.01, 0.01, 'Data from Origen22', size=6, horizontalalignment='left')  # ajoute du text en bas à gauche du plot
     plt.figtext(0.99, 0.01, 'Graph from OrigenDA v1.0.0', size=6, horizontalalignment='right')
     plt.legend()
 
-    if save:
+    if save:  # si l'option save est sélectionnée, alors sauve le graph
         ctypes.windll.kernel32.SetFileAttributesW('graphnew.jpg', 0)
         plt.savefig("graphnew.jpg", quality=95)
         ctypes.windll.kernel32.SetFileAttributesW('graphnew.jpg', 2)
     else:
-        return plt
+        return plt  # sinon, r'envoie le plot
     plt.close('all')
     if alerte:
         graph_info.set("Infos:\t- Y-axis inferior limit set to 10E-12")
     return
 
 
+# fonction qui affiche le plot pour vérifier si ok avant de sauvegarder
 def save_show_plot():
     if entry_save_resolution.get() == "":
         messagebox.showerror("Error", "Please set a resolution")
@@ -535,6 +543,7 @@ def save_show_plot():
     return
 
 
+# fonction qui sauvegarde le plot sans afficher dans le cadre
 def save_save_plot():
     if entry_save_resolution.get() == "":
         messagebox.showerror("Error", "Please set a resolution")
@@ -603,11 +612,13 @@ def save_save_plot():
     return
 
 
+# fonction qui active la combobox isotope quand un élément est sélectionné
 def combobox_element_function():
     combobox_isotope["state"] = ["readonly"]
     return
 
 
+# fonction qui active la combobox type quand un isotope est sélectionné
 def combobox_isotope_function():
     if combobox_element.get() != "":
         element = combobox_element.get()
@@ -623,6 +634,7 @@ def combobox_isotope_function():
     return
 
 
+# fonction qui sélectionne le type dans la combobox origine
 def combobox_origin_function():
     if combobox_isotope.get() != "":
         isotope = combobox_isotope.get()
@@ -653,6 +665,7 @@ def combobox_origin_function():
     return
 
 
+# change l'état de xlog
 def check_graph_function1():
     check_graph_xlog.toggle()
     return
@@ -673,6 +686,7 @@ def check_graph_function4():
     return
 
 
+# fonction qui pré remplis des paramètres oar défaut
 def save_default_settings():
     title = "graph_" + str(combobox_isotope.get())
     save_name.set(title)

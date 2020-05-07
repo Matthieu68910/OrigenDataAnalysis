@@ -29,7 +29,7 @@ executables = [
 ]
 
 setup(name='OrigenDataAnalysis',
-      version='1.1.0',
+      version='1.2.0',
       description='Process data from Origen22',
       options={'build_exe': {'includes': includes, 'excludes': excludes, 'packages': packages, 'include_files': includefiles}},
       executables=executables)
