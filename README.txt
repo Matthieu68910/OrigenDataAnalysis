@@ -1,9 +1,9 @@
 ##########################################
-#  Origen Data Analysis v1.2.0           #
+#  Origen Data Analysis v1.3.0           #
 #     author : Matthieu Duflot           #
 #     student at ISIB - BRUXELLES        #
 #     mail : duflotmatthieu1@gmail.com   #
-#     pre-release date : 7 may 2020      #
+#     pre-release date : 8 may 2020      #
 ##########################################
 
 

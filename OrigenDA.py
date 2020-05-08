@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 
-'''Origen Data Analysis v1.2.0-beta
+'''Origen Data Analysis v1.3.0
    author : Matthieu Duflot
    student at ISIB - BRUXELLES
    mail : duflotmatthieu1@gmail.com
-   release date : 7 may 2020'''
+   release date : 8 may 2020'''
 
 import tkinter as tk
 from tkinter.filedialog import *
@@ -20,7 +20,7 @@ from matplotlib.ticker import (MultipleLocator, FormatStrFormatter)
 import os
 
 # variables
-version = "OrigenDA v1.2.0-beta"
+version = "OrigenDA v1.3.0"
 sys_width = GetSystemMetrics(0)  # récupère la largeur d'écran en pixels
 sys_height = GetSystemMetrics(1)  # récupère la hauteur d'écran en pixels
 start_x_pos = 0  # position de départ de la fenêtre en largeur
@@ -470,7 +470,7 @@ def plot_fig(title, lab, x_data, y_data, res=100, width=9.4, height=4.6, x_log=F
     plt.grid(b=True, which='minor', color='darkblue', linestyle='-', alpha=0.2)
     plt.minorticks_on()
     plt.figtext(0.01, 0.01, 'Data from Origen22', size=6, horizontalalignment='left')  # ajoute du text en bas à gauche du plot
-    plt.figtext(0.99, 0.01, 'Graph from OrigenDA v1.0.0', size=6, horizontalalignment='right')
+    plt.figtext(0.99, 0.01, 'Graph from OrigenDA v1.3.0', size=6, horizontalalignment='right')
     plt.legend()
 
     if save:  # si l'option save est sélectionnée, alors sauve le graph
@@ -694,7 +694,7 @@ def save_default_settings():
     save_width.set("10.00")
     save_height.set("5.00")
     case_save_logx.set(False)
-    case_save_logy.set(True)
+    case_save_logy.set(False)
     return
 
 
@@ -732,11 +732,11 @@ case_save_logx = tk.BooleanVar()
 case_save_logx.set(False)
 check_save_logx = Checkbutton(save_frame, text="", var=case_save_logx, width=3, relief="groove", bg=bg_color)
 case_save_logy = tk.BooleanVar()
-case_save_logy.set(True)
+case_save_logy.set(False)
 check_save_logy = Checkbutton(save_frame, text="", var=case_save_logy, width=3, relief="groove", bg=bg_color)
 case_save_quick = tk.BooleanVar()
 case_save_quick.set(False)
-check_save_quick = Checkbutton(save_frame, text="Quick Save Plot", var=case_save_quick, width=20, relief="groove", bg=bg_color)
+check_save_quick = Checkbutton(save_frame,state="disable", text="Quick Save Plot", var=case_save_quick, width=20, relief="groove", bg=bg_color)
 button_save_default = Button(save_frame, text="Set Default Settings", command=save_default_settings, state="disable", width=20, relief=RAISED, font=("Adobe Pi Std", 12, "bold"), bg='#c2c2d6')
 button_save_show = Button(save_frame, text="Show Plot", command=save_show_plot, state="disable", width=20, relief=RAISED, font=("Adobe Pi Std", 12, "bold"), bg='#c2c2d6')
 button_save_save = Button(save_frame, text="Save Plot", command=save_save_plot, state="disable", width=20, relief=RAISED, font=("Adobe Pi Std", 12, "bold"), bg='#c2c2d6')
